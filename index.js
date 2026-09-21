@@ -4,6 +4,7 @@ const { getWeather, getWeatherForPlace } = require('./src/services/weather');
 const { findPlace } = require('./src/services/places');
 const { loadStops, nearestStop } = require('./src/services/stops');
 const { setPending, getPending, clearPending } = require('./src/services/pendingSelections');
+const { getNextArrivals, formatArrivals } = require('./src/services/transit');
 require('dotenv').config();
 
 const app = express();
@@ -25,7 +26,8 @@ app.post('/sms', async (req, res) => {
     clearPending(from);
     if (choice) {
       const stop = nearestStop(choice.geometry.location.lat, choice.geometry.location.lng);
-      twiml.message(`Nearest stop: ${stop.stop_name}`);
+      const arrivals = await getNextArrivals(stop.stop_id);
+      twiml.message(formatArrivals(arrivals, stop.stop_name));
     } else {
       twiml.message("Didn't recognize that number — try your search again.");
     }
@@ -43,7 +45,8 @@ app.post('/sms', async (req, res) => {
       twiml.message(`Found a few matches:\n${list}\nReply with a number.`);
     } else if (results.length === 1) {
       const stop = nearestStop(results[0].geometry.location.lat, results[0].geometry.location.lng);
-      twiml.message(`Nearest stop: ${stop.stop_name}`);
+      const arrivals = await getNextArrivals(stop.stop_id);
+      twiml.message(formatArrivals(arrivals, stop.stop_name));
     } else {
       twiml.message("Couldn't find that — try a more specific name.");
     }
