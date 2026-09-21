@@ -12,6 +12,7 @@ async function findPlace(query, biasLat, biasLon) {
       },
     }
   );
+  console.log('Places API status:', res.data.status, res.data.error_message || '');
   return res.data.results.slice(0, 3);
 }
 
