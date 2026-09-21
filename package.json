@@ -17,6 +17,7 @@
     "express": "^5.2.1",
     "gtfs-realtime-bindings": "^2.2.0",
     "node-fetch": "^3.3.2",
+    "spectrum-ts": "^12.8.0",
     "twilio": "^6.1.1"
   }
 }
