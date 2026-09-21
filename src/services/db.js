@@ -16,8 +16,14 @@ db.exec(`
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     phone TEXT PRIMARY KEY,
-    paused INTEGER NOT NULL DEFAULT 0
+    paused INTEGER NOT NULL DEFAULT 0,
+    notify_time TEXT NOT NULL DEFAULT '07:00'
   )
 `);
+
+const userColumns = db.prepare("PRAGMA table_info(users)").all().map((c) => c.name);
+if (!userColumns.includes('notify_time')) {
+  db.exec("ALTER TABLE users ADD COLUMN notify_time TEXT NOT NULL DEFAULT '07:00'");
+}
 
 module.exports = { db };

@@ -23,4 +23,38 @@ function isPaused(phone) {
   return row ? row.paused === 1 : false;
 }
 
-module.exports = { saveFavorite, getFavorite, setPaused, isPaused };
+function getAllHomeFavorites() {
+  return db.prepare(`
+    SELECT f.phone, f.stop_id, f.stop_name, f.lat, f.lon
+    FROM favorites f
+    LEFT JOIN users u ON u.phone = f.phone
+    WHERE f.label = 'home' AND (u.paused IS NULL OR u.paused = 0)
+  `).all();
+}
+
+function getHomeFavoritesForTime(time) {
+  return db.prepare(`
+    SELECT f.phone, f.stop_id, f.stop_name, f.lat, f.lon
+    FROM favorites f
+    LEFT JOIN users u ON u.phone = f.phone
+    WHERE f.label = 'home'
+      AND (u.paused IS NULL OR u.paused = 0)
+      AND COALESCE(u.notify_time, '07:00') = ?
+  `).all(time);
+}
+
+function setNotifyTime(phone, time) {
+  db.prepare(
+    'INSERT INTO users (phone, notify_time) VALUES (?, ?) ON CONFLICT(phone) DO UPDATE SET notify_time = ?'
+  ).run(phone, time, time);
+}
+
+module.exports = {
+  saveFavorite,
+  getFavorite,
+  setPaused,
+  isPaused,
+  getAllHomeFavorites,
+  getHomeFavoritesForTime,
+  setNotifyTime,
+};
