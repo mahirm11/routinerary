@@ -13,4 +13,11 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    phone TEXT PRIMARY KEY,
+    paused INTEGER NOT NULL DEFAULT 0
+  )
+`);
+
 module.exports = { db };

@@ -5,17 +5,14 @@ const { findPlace } = require('./src/services/places');
 const { loadStops, nearestStop } = require('./src/services/stops');
 const { setPending, getPending, clearPending } = require('./src/services/pendingSelections');
 const { getNextArrivals, formatArrivals } = require('./src/services/transit');
-const { saveFavorite, getFavorite } = require('./src/services/favorites');
+const { saveFavorite, getFavorite, setPaused, isPaused } = require('./src/services/favorites');
 require('dotenv').config();
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 
-// Load static GTFS stop data once at startup
 loadStops('./data/stops.txt');
 
-// Tracks the last stop each phone number successfully resolved,
-// so "SAVE <label>" knows what to save
 const lastResolved = new Map();
 
 app.post('/sms', async (req, res) => {
@@ -25,8 +22,23 @@ app.post('/sms', async (req, res) => {
   console.log('Received:', text, 'from', from);
 
   const twiml = new twilio.twiml.MessagingResponse();
+  const upper = text.toUpperCase();
 
-  if (text.toUpperCase().startsWith('SAVE ')) {
+  if (upper === 'HELP') {
+    twiml.message(
+      'Routinerary commands:\nWEATHER [place] - forecast\n' +
+      '[place name] - find nearest transit stop\nSAVE [name] - save your last search\n' +
+      '[saved name] - look up a saved stop\nPAUSE - stop messages\nSTART - resume messages'
+    );
+  } else if (upper === 'PAUSE') {
+    setPaused(from, true);
+    twiml.message('Paused. Text START anytime to resume.');
+  } else if (upper === 'START') {
+    setPaused(from, false);
+    twiml.message('Resumed! Text HELP to see available commands.');
+  } else if (isPaused(from)) {
+    // Paused users get no reply to anything else — silently drop.
+  } else if (upper.startsWith('SAVE ')) {
     const label = text.slice(5).trim().toLowerCase();
     const last = lastResolved.get(from);
     if (!last) {
@@ -46,7 +58,7 @@ app.post('/sms', async (req, res) => {
     } else {
       twiml.message("Didn't recognize that number — try your search again.");
     }
-  } else if (text.toUpperCase().startsWith('WEATHER')) {
+  } else if (upper.startsWith('WEATHER')) {
     const locationQuery = text.slice(7).trim();
     const forecast = locationQuery
       ? await getWeatherForPlace(locationQuery)

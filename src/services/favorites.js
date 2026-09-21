@@ -12,4 +12,15 @@ function getFavorite(phone, label) {
   ).get(phone, label);
 }
 
-module.exports = { saveFavorite, getFavorite };
+function setPaused(phone, paused) {
+  db.prepare(
+    'INSERT INTO users (phone, paused) VALUES (?, ?) ON CONFLICT(phone) DO UPDATE SET paused = ?'
+  ).run(phone, paused ? 1 : 0, paused ? 1 : 0);
+}
+
+function isPaused(phone) {
+  const row = db.prepare('SELECT paused FROM users WHERE phone = ?').get(phone);
+  return row ? row.paused === 1 : false;
+}
+
+module.exports = { saveFavorite, getFavorite, setPaused, isPaused };
